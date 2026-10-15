@@ -9,7 +9,7 @@
 import { Fragment, useEffect, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { api, connectAgent, disconnectAgent, getApiMode, probeAgent, subscribeApiMode } from '@/lib/api';
+import { api, connectAgent, disconnectAgent, getAgentRevision, getApiMode, probeAgent, subscribeApiMode } from '@/lib/api';
 import { Alert } from './ui';
 
 /** 'mock' | 'agent' | 'backend' - re-renders when the site switches between demo and live data. */
@@ -30,6 +30,7 @@ export function useAgentStatus(intervalMs = 4000) {
     let alive = true;
     let timer = null;
     const check = async () => {
+      const revision = getAgentRevision();
       try {
         if (getApiMode() === 'backend') {
           const health = await api.health();
@@ -40,6 +41,12 @@ export function useAgentStatus(intervalMs = 4000) {
           if (alive) setStatus({ state: 'connected', health, error: null });
         }
       } catch (err) {
+        // The setup page may have connected successfully while this older probe
+        // was still in flight. Do not let its stale failure switch back to mocks.
+        if (getAgentRevision() !== revision) {
+          if (alive) timer = setTimeout(check, intervalMs);
+          return;
+        }
         if (getApiMode() === 'agent' && err && err.code !== 'AGENT_OUTDATED') disconnectAgent();
         if (alive) setStatus({ state: 'missing', health: null, error: err ? err.message : null });
       }

@@ -65,9 +65,13 @@ export const DEFAULT_AGENT_URL = 'http://127.0.0.1:8000';
 const normalizeUrl = (u) => String(u || '').trim().replace(/\/+$/, '');
 
 let agent = { url: null, token: null };
+// Incremented whenever the active agent session changes. Status probes use this
+// to avoid letting an older in-flight failure undo a newer successful connect.
+let agentRevision = 0;
 const modeListeners = new Set();
 function emitMode() { modeListeners.forEach((fn) => { try { fn(); } catch { /* ignore */ } }); }
 export function subscribeApiMode(fn) { modeListeners.add(fn); return () => modeListeners.delete(fn); }
+export function getAgentRevision() { return agentRevision; }
 /** 'mock' | 'agent' | 'backend' */
 export function getApiMode() { return STATIC_REAL ? 'backend' : agent.token ? 'agent' : 'mock'; }
 export function isMockMode() { return getApiMode() === 'mock'; }
@@ -106,6 +110,7 @@ export async function connectAgent(url = getAgentUrl()) {
   const auth = await res.json();
   const changed = agent.token === null || agent.url !== base;
   agent = { url: base, token: auth.access_token };
+  if (changed) agentRevision += 1;
   try {
     window.localStorage.setItem(AGENT_URL_KEY, base);
     window.localStorage.setItem(AGENT_TOKEN_KEY, auth.access_token);
@@ -117,6 +122,7 @@ export async function connectAgent(url = getAgentUrl()) {
 export function disconnectAgent() {
   if (!agent.token) return;
   agent = { url: agent.url, token: null };
+  agentRevision += 1;
   try { window.localStorage.removeItem(AGENT_TOKEN_KEY); } catch { /* ignore */ }
   emitMode();
 }
