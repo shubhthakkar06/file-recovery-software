@@ -126,7 +126,10 @@ export async function connectAgent(url = getAgentUrl()) {
     window.localStorage.setItem(AGENT_URL_KEY, base);
     window.localStorage.setItem(AGENT_TOKEN_KEY, auth.access_token);
   } catch { /* storage disabled */ }
-  if (changed) emitMode();
+  // Notify mode subscribers after every successful handshake. This also covers
+  // a restored session whose in-memory mode was read during hydration before
+  // the browser-side agent state was available.
+  emitMode();
   return { url: base, user: auth.user };
 }
 
