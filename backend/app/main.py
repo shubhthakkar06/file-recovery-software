@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import logging
 import platform
+import secrets
 import shutil
 import time
 from contextlib import asynccontextmanager
@@ -25,7 +26,7 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 
 from . import schemas as S
 from .analysis import AnalysisEngine, CandidatesFormatError, validate_candidates
-from .auth import get_current_user, require_role
+from .auth import get_current_user, hash_password, issue_token, require_role
 from .auth import router as auth_router
 from .config import settings
 from .db import Database, Repository
@@ -103,11 +104,17 @@ class PrivateNetworkAccess:
 
         async def send_with_pna(message) -> None:  # noqa: ANN001
             if message["type"] == "http.response.start":
-                msg_headers = list(message.get("headers", []))
+                # CORSMiddleware (inside us) has usually set Allow-Origin already. Replace those headers
+                # instead of appending: a duplicated Access-Control-Allow-Origin makes the browser reject
+                # the preflight, which is what broke "Test connection" from the hosted site.
+                replaced = {b"access-control-allow-private-network", b"access-control-allow-origin",
+                            b"access-control-allow-credentials"}
+                msg_headers = [(k, v) for k, v in message.get("headers", []) if k.lower() not in replaced]
                 msg_headers.append((b"access-control-allow-private-network", b"true"))
                 if origin:
                     msg_headers.append((b"access-control-allow-origin", origin.encode("latin-1")))
                     msg_headers.append((b"access-control-allow-credentials", b"true"))
+                    msg_headers.append((b"vary", b"Origin"))
                 message = dict(message, headers=msg_headers)
             await send(message)
 
@@ -166,6 +173,38 @@ def health(request: Request) -> dict:
             "engine": {"available": engine_ok, "mock": st.engine.is_mock, "path": None if st.engine.is_mock else settings.engine_path,
                        "version": st.engine.version()},
             "database": {"ok": db_ok, "dialect": st.db.dialect}}
+
+
+LOCAL_AGENT_EMAIL = "local-agent@localhost"
+_AGENT_WEB_HOSTS = ("vercel.app", "localhost", "127.0.0.1", "web.app", "firebaseapp.com")
+
+
+def _agent_origin_allowed(origin: str) -> bool:
+    if not origin:
+        return True  # same-origin / non-browser client on this PC
+    origin = origin.rstrip("/")
+    explicit = {o.rstrip("/") for o in settings.cors_origins if o.strip() != "*"}
+    host = origin.split("://", 1)[-1].split("/", 1)[0].split(":", 1)[0].lower()
+    return origin in explicit or any(host == h or host.endswith("." + h) for h in _AGENT_WEB_HOSTS)
+
+
+@app.post("/api/agent/session", tags=["system"])
+def agent_session(request: Request) -> dict:
+    """Signs the hosted website into this local agent.
+
+    Visitors sign in on the website (Twilio OTP), which the agent cannot verify, so the website asks the
+    agent for a local session instead. Only browsers on this PC (loopback) from the known website origins
+    get one; the account is a built-in local admin that only exists in this PC's database."""
+    client = request.client.host if request.client else ""
+    if client not in ("127.0.0.1", "::1", "localhost", "testclient"):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Agent sessions are only issued to this computer.")
+    if not _agent_origin_allowed(request.headers.get("origin", "")):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="This website is not allowed to use the Recovery Agent.")
+    repo = request.app.state.repo
+    user = repo.get_user_by_email(LOCAL_AGENT_EMAIL)
+    if not user:
+        user = repo.create_user(LOCAL_AGENT_EMAIL, hash_password(secrets.token_urlsafe(32)), "Local Recovery Agent", role="admin")
+    return issue_token(request, user)
 
 
 @app.get("/api/system/status", tags=["system"])

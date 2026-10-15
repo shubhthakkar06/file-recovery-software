@@ -5,6 +5,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Icon, Alert, Badge, Spinner } from './ui';
+import { connectAgent, getApiMode } from '@/lib/api';
 
 const AGENT_ZIP = '/downloads/recovery-agent.zip';
 const DEFAULT_AGENT_URL = 'http://127.0.0.1:8000';
@@ -38,7 +39,8 @@ export default function AgentSetup() {
 
   // Check connection to local Windows recovery agent
   async function testConnection(targetUrl = null) {
-    const primary = (targetUrl || agentUrl || DEFAULT_AGENT_URL).trim().replace(/\/+$/, '');
+    const raw = typeof targetUrl === 'string' && targetUrl ? targetUrl : (agentUrl || DEFAULT_AGENT_URL);
+    const primary = String(raw).trim().replace(/\/+$/, '');
     const candidates = [primary];
     if (primary === 'http://127.0.0.1:8000') {
       candidates.push('http://localhost:8000');
@@ -60,11 +62,24 @@ export default function AgentSetup() {
         if (!healthRes.ok) continue;
         const healthData = await healthRes.json();
 
+        // Sign the website in to the agent: this is what switches the site from demo data to live data.
+        let agentToken = null;
+        if (getApiMode() !== 'backend') {
+          try {
+            await connectAgent(url);
+            agentToken = window.localStorage.getItem('frs_agent_token');
+          } catch (err) {
+            lastErr = err;
+            continue;
+          }
+        }
+
         let systemData = null;
         try {
           const sysRes = await fetch(`${url}/api/system/status`, {
             method: 'GET',
             cache: 'no-store',
+            headers: agentToken ? { Authorization: `Bearer ${agentToken}` } : {},
           });
           if (sysRes.ok) systemData = await sysRes.json();
         } catch { /* optional */ }
@@ -218,7 +233,7 @@ export default function AgentSetup() {
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={testConnection}
+              onClick={() => testConnection(agentUrl)}
               disabled={testing}
               className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-xs hover:bg-slate-50 active:bg-slate-100 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
             >
@@ -274,7 +289,7 @@ export default function AgentSetup() {
           <div className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3.5 dark:border-slate-800 dark:bg-slate-850">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-slate-600 dark:text-slate-400">C++ Engine</span>
-              {status.health?.engine?.available ? (
+              {status.health?.engine?.available && !status.health?.engine?.mock ? (
                 <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Ready</span>
               ) : status.connected ? (
                 <span className="text-xs font-bold text-amber-500">Simulated</span>

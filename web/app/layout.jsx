@@ -2,7 +2,7 @@ import './globals.css';
 import { AuthProvider } from '@/components/AuthProvider';
 import ProjectCreditHeader from '@/components/ProjectCreditHeader';
 import NavBar from '@/components/NavBar';
-import { AgentBanner } from '@/components/AgentStatus';
+import { AgentBanner, ApiModeBoundary } from '@/components/AgentStatus';
 
 export const metadata = {
   title: 'HDD File Recovery Suite',
@@ -33,7 +33,7 @@ export default function RootLayout({ children }) {
           <ProjectCreditHeader />
           <NavBar />
           <AgentBanner />
-          <main className="mx-auto max-w-7xl px-4 py-6">{children}</main>
+          <main className="mx-auto max-w-7xl px-4 py-6"><ApiModeBoundary>{children}</ApiModeBoundary></main>
           <footer className="mx-auto max-w-7xl px-4 pb-12 pt-6 text-center text-xs text-slate-500 border-t border-slate-200/80 dark:border-slate-800/80 mt-12 space-y-2">
             <div className="text-slate-500 dark:text-slate-400">
               © 2026 HDD File Recovery Suite. All rights reserved.

@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { usesLocalAgent, usingMocks } from '@/lib/api';
+import { useApiMode } from './AgentStatus';
 import { useAuth } from './AuthProvider';
 import { Icon, classNames } from './ui';
 
@@ -17,6 +17,7 @@ const LINKS = [
 export default function NavBar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const mode = useApiMode();
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur transition-colors duration-200 dark:border-slate-800/90 dark:bg-[#0b1120]/95 dark:shadow-md dark:shadow-black/20">
       <div className="mx-auto flex h-14 max-w-7xl items-center gap-6 px-4">
@@ -36,9 +37,13 @@ export default function NavBar() {
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-3 text-sm">
-          {usingMocks && (
+          {mode === 'mock' ? (
             <span className="rounded-md bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 dark:border dark:border-amber-800/40">
               MOCK DATA
+            </span>
+          ) : (
+            <span className="rounded-md bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border dark:border-emerald-800/40">
+              {mode === 'agent' ? 'LIVE AGENT' : 'LIVE'}
             </span>
           )}
           <ThemeToggle />
