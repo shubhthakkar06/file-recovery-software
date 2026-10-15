@@ -2,6 +2,7 @@
 
 A local, web-based recovery tool for deleted files on **Windows 10/11 x64** hard disk drives formatted with **NTFS or FAT32**. It has two scan engines:
 
+
 * **Quick Scan** parses the NTFS `$MFT` (or FAT32 directories) and recovers deleted files with their original names, folders and timestamps.
 * **Deep Scan** carves signatures sector by sector and works after formatting or file-system corruption.
 
