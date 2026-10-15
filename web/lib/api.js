@@ -61,6 +61,8 @@ export function onUnauthorized(fn) { unauthorizedHandler = fn; }
 // and reports go to the Recovery Agent on this PC as soon as one is detected, otherwise to the mock demo.
 const AGENT_URL_KEY = 'frs_agent_url';
 const AGENT_TOKEN_KEY = 'frs_agent_token';
+const AGENT_STATE_KEY = '__frsAgentSession';
+const API_MODE_EVENT = 'frs:api-mode-change';
 export const DEFAULT_AGENT_URL = 'http://127.0.0.1:8000';
 const normalizeUrl = (u) => String(u || '').trim().replace(/\/+$/, '');
 
@@ -75,14 +77,37 @@ function restoreAgentSession() {
   }
 }
 
-let agent = restoreAgentSession();
+function getAgentState() {
+  if (typeof window === 'undefined') return { ...restoreAgentSession(), revision: 0 };
+  try {
+    if (!window[AGENT_STATE_KEY]) {
+      window[AGENT_STATE_KEY] = { ...restoreAgentSession(), revision: 0 };
+    }
+    return window[AGENT_STATE_KEY];
+  } catch {
+    return { ...restoreAgentSession(), revision: 0 };
+  }
+}
+
+const agent = getAgentState();
 // Incremented whenever the active agent session changes. Status probes use this
 // to avoid letting an older in-flight failure undo a newer successful connect.
-let agentRevision = 0;
 const modeListeners = new Set();
-function emitMode() { modeListeners.forEach((fn) => { try { fn(); } catch { /* ignore */ } }); }
-export function subscribeApiMode(fn) { modeListeners.add(fn); return () => modeListeners.delete(fn); }
-export function getAgentRevision() { return agentRevision; }
+function emitMode() {
+  if (typeof window !== 'undefined') {
+    try { window.dispatchEvent(new Event(API_MODE_EVENT)); } catch { /* ignore */ }
+  }
+  modeListeners.forEach((fn) => { try { fn(); } catch { /* ignore */ } });
+}
+export function subscribeApiMode(fn) {
+  if (typeof window !== 'undefined') {
+    window.addEventListener(API_MODE_EVENT, fn);
+    return () => window.removeEventListener(API_MODE_EVENT, fn);
+  }
+  modeListeners.add(fn);
+  return () => modeListeners.delete(fn);
+}
+export function getAgentRevision() { return agent.revision || 0; }
 /** 'mock' | 'agent' | 'backend' */
 export function getApiMode() { return STATIC_REAL ? 'backend' : agent.token ? 'agent' : 'mock'; }
 export function isMockMode() { return getApiMode() === 'mock'; }
@@ -120,8 +145,9 @@ export async function connectAgent(url = getAgentUrl()) {
   }
   const auth = await res.json();
   const changed = agent.token === null || agent.url !== base;
-  agent = { url: base, token: auth.access_token };
-  if (changed) agentRevision += 1;
+  agent.url = base;
+  agent.token = auth.access_token;
+  if (changed) agent.revision = (agent.revision || 0) + 1;
   try {
     window.localStorage.setItem(AGENT_URL_KEY, base);
     window.localStorage.setItem(AGENT_TOKEN_KEY, auth.access_token);
@@ -135,8 +161,8 @@ export async function connectAgent(url = getAgentUrl()) {
 
 export function disconnectAgent() {
   if (!agent.token) return;
-  agent = { url: agent.url, token: null };
-  agentRevision += 1;
+  agent.token = null;
+  agent.revision = (agent.revision || 0) + 1;
   try { window.localStorage.removeItem(AGENT_TOKEN_KEY); } catch { /* ignore */ }
   emitMode();
 }
