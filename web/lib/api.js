@@ -64,7 +64,18 @@ const AGENT_TOKEN_KEY = 'frs_agent_token';
 export const DEFAULT_AGENT_URL = 'http://127.0.0.1:8000';
 const normalizeUrl = (u) => String(u || '').trim().replace(/\/+$/, '');
 
-let agent = { url: null, token: null };
+function restoreAgentSession() {
+  if (typeof window === 'undefined') return { url: null, token: null };
+  try {
+    const url = normalizeUrl(window.localStorage.getItem(AGENT_URL_KEY));
+    const token = window.localStorage.getItem(AGENT_TOKEN_KEY);
+    return url && token ? { url, token } : { url: null, token: null };
+  } catch {
+    return { url: null, token: null };
+  }
+}
+
+let agent = restoreAgentSession();
 // Incremented whenever the active agent session changes. Status probes use this
 // to avoid letting an older in-flight failure undo a newer successful connect.
 let agentRevision = 0;
