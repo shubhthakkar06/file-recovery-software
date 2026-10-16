@@ -47,6 +47,7 @@ const TYPE_GROUPS = [
   { label: 'Audio / Video', types: ['mp4', 'mov', 'wav', 'avi', 'm4a'] },
   { label: 'Other', types: ['sqlite', 'msg'] },
 ];
+const ALL_FILE_TYPES = TYPE_GROUPS.flatMap((group) => group.types);
 
 const ACTIVE = ['queued', 'running', 'analyzing'];
 const PHASES = {
@@ -221,6 +222,7 @@ function ScanWizard({ system, onStarted }) {
   }
 
   const toggle = (arr, setArr, v) => setArr(arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
+  const allFileTypesSelected = ALL_FILE_TYPES.every((type) => types.includes(type));
 
   return (
     <div className="card overflow-hidden p-4 sm:p-6">
@@ -351,16 +353,24 @@ function ScanWizard({ system, onStarted }) {
                 points={['Reads every sector looking for file signatures', 'Works after formatting or corruption', 'Names are rebuilt from content (smart naming)', 'Finds JPEG, PNG, PDF, DOCX/XLSX, ZIP, MP4, ...']} />
             </div>
             <div>
-              <div className="label">File types <span className="font-normal text-slate-500 dark:text-slate-400">(leave empty for all types)</span></div>
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <div className="label mb-0">File types <span className="font-normal text-slate-500 dark:text-slate-400">(no filters means all types)</span></div>
+                <button type="button" className="text-sm font-semibold text-brand-700 underline-offset-2 hover:underline dark:text-brand-300"
+                  aria-label={allFileTypesSelected ? 'Reset file types to all supported types' : 'Select all supported file types'}
+                  onClick={() => setTypes(allFileTypesSelected ? [] : ALL_FILE_TYPES)}>
+                  {allFileTypesSelected ? 'Reset to all types' : 'Select all'}
+                </button>
+              </div>
               <div className="space-y-2">
                 {TYPE_GROUPS.map((g) => (
                   <div key={g.label} className="flex flex-wrap items-center gap-1.5">
                     <button type="button" className="w-28 text-left text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400"
+                      aria-label={`${g.types.every((t) => types.includes(t)) ? 'Clear' : 'Select'} all ${g.label.toLowerCase()} file types`}
                       onClick={() => setTypes(g.types.every((t) => types.includes(t)) ? types.filter((t) => !g.types.includes(t)) : [...new Set([...types, ...g.types])])}>
                       {g.label}
                     </button>
                     {g.types.map((t) => (
-                      <button key={t} type="button" onClick={() => toggle(types, setTypes, t)}
+                      <button key={t} type="button" aria-pressed={types.includes(t)} onClick={() => toggle(types, setTypes, t)}
                         className={classNames('rounded-full border px-2.5 py-0.5 text-xs font-medium transition',
                           types.includes(t)
                             ? 'border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-950/80 dark:text-brand-300 dark:border-brand-800'
