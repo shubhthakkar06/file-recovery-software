@@ -5,7 +5,10 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        brand: { 50: '#eef2ff', 100: '#e0e7ff', 500: '#4f46e5', 600: '#4338ca', 700: '#3730a3', 900: '#1e1b4b' },
+        brand: {
+          50: '#eef2ff', 100: '#e0e7ff', 200: '#c7d2fe', 300: '#a5b4fc', 400: '#818cf8',
+          500: '#4f46e5', 600: '#4338ca', 700: '#3730a3', 800: '#312e81', 900: '#1e1b4b', 950: '#1e1b4b',
+        },
       },
       fontFamily: { sans: ['Noto Sans', 'Inter', 'Segoe UI', 'system-ui', 'sans-serif'] },
       fontSize: { xs: ['0.8125rem', { lineHeight: '1.25rem' }] },
