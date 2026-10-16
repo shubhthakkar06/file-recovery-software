@@ -19,7 +19,11 @@ export default function SiteFooter() {
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <Link href="/dashboard" className="inline-flex items-center gap-2 font-bold text-white hover:text-indigo-100">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10"><span aria-hidden="true">HDD</span></span>
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                  <path d="M4 6h16v8H4zM4 14l2 4h12l2-4M7 10h.01" />
+                </svg>
+              </span>
               HDD File Recovery
             </Link>
             <p className="mt-3 max-w-xs text-sm leading-6 text-indigo-100">A local-first recovery control panel for Windows drives.</p>
