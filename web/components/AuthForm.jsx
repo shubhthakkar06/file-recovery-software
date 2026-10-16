@@ -204,7 +204,7 @@ export default function AuthForm() {
         {twoFactor ? (
           /* ================= STEP 2: 2FA OTP SCREEN ================= */
           <div className="space-y-4">
-            <div className="rounded-lg bg-slate-50 p-3.5 border border-slate-200 text-xs text-slate-600 space-y-1 dark:bg-slate-850 dark:border-slate-700/80 dark:text-slate-300">
+            <div className="rounded-lg bg-slate-50 p-3.5 border border-slate-200 text-xs text-slate-600 space-y-1 dark:bg-slate-900 dark:border-slate-700/80 dark:text-slate-300">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5 font-medium text-slate-800 text-sm dark:text-slate-100">
                   <svg className="w-4 h-4 text-brand-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">

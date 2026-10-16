@@ -80,7 +80,7 @@ export default function RecoveryDashboard() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{scanId ? 'Recovery session' : 'Recover deleted files'}</h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white md:text-4xl">{scanId ? 'Recovery session' : 'Recover deleted files'}</h1>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">NTFS and FAT32 hard disk drives on Windows 10/11 - read-only scanning.</p>
         </div>
         {scanId && <button type="button" className="btn-secondary" onClick={() => openScan(null)}><Icon name="search" /> New scan</button>}
@@ -111,18 +111,18 @@ function SystemBanner({ system }) {
 function StepHeader({ step, setStep, canGo }) {
   const steps = ['Scenario', 'What to scan', 'Scan options', 'Review & start'];
   return (
-    <ol className="flex flex-wrap gap-2">
+    <ol aria-label="Recovery setup progress" className="grid grid-cols-2 gap-2 sm:grid-cols-4">
       {steps.map((s, i) => (
-        <li key={s}>
-          <button type="button" disabled={!canGo(i)} onClick={() => setStep(i)}
-            className={classNames('flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
-              i === step ? 'bg-brand-600 text-white shadow-sm'
-                : i < step ? 'bg-brand-50 text-brand-700 dark:bg-brand-950/70 dark:text-brand-300 dark:border dark:border-brand-800/40'
-                : 'bg-slate-100 text-slate-500 dark:bg-slate-800/90 dark:text-slate-400',
+        <li key={s} className="min-w-0">
+          <button type="button" disabled={!canGo(i)} onClick={() => setStep(i)} aria-current={i === step ? 'step' : undefined}
+            className={classNames('group flex min-h-[68px] w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500',
+              i === step ? 'border-brand-600 bg-brand-600 text-white shadow-md shadow-brand-900/15'
+                : i < step ? 'border-emerald-200 bg-emerald-50 text-slate-800 hover:border-emerald-400 dark:border-emerald-900/70 dark:bg-emerald-950/30 dark:text-slate-100'
+                : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-slate-600',
               'disabled:cursor-not-allowed')}>
-            <span className={classNames('flex h-5 w-5 items-center justify-center rounded-full text-xs font-semibold',
-              i === step ? 'bg-white/20' : 'bg-white text-slate-700 dark:bg-slate-900 dark:text-slate-300')}>{i < step ? <Icon name="check" className="h-3 w-3" /> : i + 1}</span>
-            {s}
+            <span className={classNames('flex h-8 w-8 flex-none items-center justify-center rounded-full text-sm font-bold',
+              i === step ? 'bg-white/20 text-white' : i < step ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300')}>{i < step ? <Icon name="check" className="h-4 w-4" /> : i + 1}</span>
+            <span className="min-w-0"><span className="block text-xs font-semibold uppercase tracking-wider opacity-75">Step {i + 1}</span><span className="block truncate text-sm font-semibold">{s}</span></span>
           </button>
         </li>
       ))}
@@ -175,7 +175,8 @@ function ScanWizard({ system, onStarted }) {
     return map;
   }, [drives]);
 
-  const selectedSpecs = scope === 'folder' ? (letterOf(folderPath) ? [`${letterOf(folderPath).toUpperCase()}:`] : []) : scope === 'all' ? [] : sources;
+  const selectedSpecs = useMemo(() => scope === 'folder' ? (letterOf(folderPath) ? [`${letterOf(folderPath).toUpperCase()}:`] : []) : scope === 'all' ? [] : sources,
+    [scope, folderPath, sources]);
   const ssdSelected = selectedSpecs.some((s) => mediaOf[s] === 'SSD');
   const systemSelected = drives && selectedSpecs.some((s) => drives.volumes.find((v) => v.source_spec === s && v.is_system_volume));
   const folderValid = /^[A-Za-z]:\\/.test(folderPath.trim());
@@ -198,6 +199,10 @@ function ScanWizard({ system, onStarted }) {
     return selectedSpecs.reduce((s, x) => s + sizeOf(x), 0);
   }, [drives, scope, selectedSpecs]);
 
+  const selectedTarget = scope === 'all' ? 'All connected HDDs' : scope === 'folder' ? (folderPath || 'Choose a folder') : selectedSpecs.length
+    ? selectedSpecs.map((spec) => drives?.volumes.find((v) => v.source_spec === spec)?.letter || drives?.physical_drives.find((d) => d.device_path === spec)?.model || spec).join(', ')
+    : 'No drive selected';
+
   async function start() {
     setSubmitting(true);
     setError(null);
@@ -218,9 +223,25 @@ function ScanWizard({ system, onStarted }) {
   const toggle = (arr, setArr, v) => setArr(arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
 
   return (
-    <div className="card p-6">
+    <div className="card overflow-hidden p-4 sm:p-6">
+      <div className="mb-5 rounded-2xl bg-gradient-to-r from-brand-700 via-brand-600 to-indigo-500 px-5 py-5 text-white shadow-lg shadow-brand-900/15 sm:px-6 sm:py-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="max-w-2xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-indigo-100">Recovery workspace</p>
+            <h2 className="mt-1 text-xl font-bold sm:text-2xl">Set up a safe recovery scan</h2>
+            <p className="mt-1.5 max-w-xl text-sm leading-6 text-indigo-50">Choose what happened, select the affected drive, and review the scan before it starts.</p>
+          </div>
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white"><Icon name="shield" className="h-4 w-4" /> Read-only scan</span>
+        </div>
+        <div className="mt-5 grid grid-cols-3 gap-2 border-t border-white/20 pt-4 text-xs sm:max-w-lg sm:gap-4">
+          <div><span className="block font-bold text-white">Quick</span><span className="mt-0.5 block text-indigo-100">Recently deleted</span></div>
+          <div><span className="block font-bold text-white">Deep</span><span className="mt-0.5 block text-indigo-100">Formatted / damaged</span></div>
+          <div><span className="block font-bold text-white">Private</span><span className="mt-0.5 block text-indigo-100">Data stays local</span></div>
+        </div>
+      </div>
       <StepHeader step={step} setStep={setStep} canGo={canGo} />
-      <div className="mt-6">
+      <div className="mt-5 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-6">
+      <div className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 dark:border-slate-800 dark:bg-slate-900/60">
         {/* ---------------------------------------------------------------- step 1 */}
         {step === 0 && (
           <div>
@@ -397,6 +418,26 @@ function ScanWizard({ system, onStarted }) {
             </div>
           </div>
         )}
+      </div>
+      <aside className="order-first rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5 lg:order-last dark:border-slate-800 dark:bg-slate-950/60" aria-label="Scan summary and safety guidance">
+        <div className="flex items-center gap-2 text-slate-900 dark:text-white"><span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-100 text-brand-700 dark:bg-brand-950 dark:text-brand-300"><Icon name="layers" /></span><h3 className="font-bold">Scan summary</h3></div>
+        <dl className="mt-4 space-y-3 text-sm">
+          <div><dt className="text-xs font-medium text-slate-500 dark:text-slate-400">Scenario</dt><dd className="mt-0.5 font-semibold text-slate-800 dark:text-slate-100">{SCENARIOS.find((s) => s.id === scenario)?.title}</dd></div>
+          <div><dt className="text-xs font-medium text-slate-500 dark:text-slate-400">Target</dt><dd className="mt-0.5 break-words font-semibold text-slate-800 dark:text-slate-100">{selectedTarget}</dd></div>
+          <div><dt className="text-xs font-medium text-slate-500 dark:text-slate-400">Scan type</dt><dd className="mt-0.5 font-semibold text-slate-800 dark:text-slate-100">{mode === 'quick' ? 'Quick Scan · MFT' : 'Deep Scan · sector carving'}</dd></div>
+          <div><dt className="text-xs font-medium text-slate-500 dark:text-slate-400">File types</dt><dd className="mt-0.5 font-semibold text-slate-800 dark:text-slate-100">{types.length ? types.map((t) => `.${t}`).join(', ') : 'All supported types'}</dd></div>
+          {estimatedBytes > 0 && <div><dt className="text-xs font-medium text-slate-500 dark:text-slate-400">Selected capacity</dt><dd className="mt-0.5 font-semibold text-slate-800 dark:text-slate-100">{formatBytes(estimatedBytes)}</dd></div>}
+        </dl>
+        <div className="mt-5 border-t border-slate-200 pt-4 dark:border-slate-800">
+          <h4 className="text-sm font-bold text-slate-900 dark:text-white">Protect your files</h4>
+          <ul className="mt-3 space-y-3 text-xs leading-5 text-slate-700 dark:text-slate-300">
+            <li className="flex gap-2"><Icon name="check" className="mt-0.5 h-4 w-4 flex-none text-emerald-600 dark:text-emerald-400" /><span>Stop using the affected drive to reduce overwrites.</span></li>
+            <li className="flex gap-2"><Icon name="check" className="mt-0.5 h-4 w-4 flex-none text-emerald-600 dark:text-emerald-400" /><span>Restore recovered files to a different physical drive.</span></li>
+            <li className="flex gap-2"><Icon name="check" className="mt-0.5 h-4 w-4 flex-none text-emerald-600 dark:text-emerald-400" /><span>The scan opens the source for read-only access.</span></li>
+          </ul>
+        </div>
+        {system?.mock_mode && <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs leading-5 text-amber-900 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200"><strong>Demo mode</strong><br />Drive details and scan results are simulated.</div>}
+      </aside>
       </div>
     </div>
   );
@@ -805,16 +846,16 @@ function ResultsPanel({ scan }) {
         {error && <div className="p-4"><Alert tone="danger">{error}</Alert></div>}
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
-            <thead className="bg-slate-50 dark:bg-slate-900/90 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
+            <thead className="bg-slate-50 dark:bg-slate-900/90 text-center text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-800">
               <tr>
-                <th className="w-10 px-4 py-2.5"><input type="checkbox" checked={allOnPage} onChange={togglePage} aria-label="Select page" /></th>
+                <th scope="col" className="w-10 px-4 py-2.5"><input type="checkbox" checked={allOnPage} onChange={togglePage} aria-label="Select page" /></th>
                 <SortTh col="name" sort={sort} onSort={toggleSort}>Name</SortTh>
-                <th className="px-3 py-2.5">Original location</th>
+                <th scope="col" className="px-3 py-2.5 text-left">Original location</th>
                 <SortTh col="extension" sort={sort} onSort={toggleSort}>Type</SortTh>
                 <SortTh col="size" sort={sort} onSort={toggleSort} right>Size</SortTh>
                 <SortTh col="confidence" sort={sort} onSort={toggleSort}>Recovery chance</SortTh>
-                <th className="px-3 py-2.5">Modified</th>
-                <th className="px-3 py-2.5" />
+                <th scope="col" className="px-3 py-2.5">Modified</th>
+                <th scope="col" className="px-3 py-2.5"><span className="sr-only">Actions</span></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
@@ -878,8 +919,8 @@ function ResultsPanel({ scan }) {
 function SortTh({ col, sort, onSort, children, right }) {
   const active = sort.sort === col;
   return (
-    <th className={classNames('px-3 py-2', right && 'text-right')}>
-      <button type="button" className={classNames('inline-flex items-center gap-1 uppercase', active && 'text-slate-800')} onClick={() => onSort(col)}>
+    <th scope="col" aria-sort={active ? (sort.order === 'asc' ? 'ascending' : 'descending') : 'none'} className={classNames('px-3 py-2', right && 'text-right')}>
+      <button type="button" className={classNames('inline-flex items-center justify-center gap-1 uppercase', right && 'ml-auto', active && 'text-slate-800 dark:text-white')} onClick={() => onSort(col)}>
         {children}{active && <span aria-hidden="true">{sort.order === 'asc' ? '▲' : '▼'}</span>}
       </button>
     </th>

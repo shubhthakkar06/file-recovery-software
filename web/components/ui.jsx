@@ -45,6 +45,7 @@ const ICONS = {
   warning: 'M12 3l10 18H2z M12 10v4 M12 17h.01',
   check: 'M5 12l5 5L20 7',
   x: 'M6 6l12 12 M18 6L6 18',
+  menu: 'M4 6h16 M4 12h16 M4 18h16',
   bolt: 'M13 2L4 14h7l-1 8 9-12h-7z',
   layers: 'M12 3l9 5-9 5-9-5z M3 13l9 5 9-5',
   book: 'M4 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4z M20 4h-7a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h8z',
@@ -107,11 +108,11 @@ export function Badge({ children, tone = 'slate' }) {
   return <span className={classNames('inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium', tones[tone])}>{children}</span>;
 }
 
-export function ProgressBar({ value, tone = 'brand', striped = false }) {
+export function ProgressBar({ value, tone = 'brand', striped = false, label = 'Progress' }) {
   const pct = Math.max(0, Math.min(100, Number(value) || 0));
   const color = tone === 'green' ? 'bg-emerald-500' : tone === 'red' ? 'bg-red-500' : 'bg-brand-600 dark:bg-indigo-500';
   return (
-    <div className="h-3 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800" role="progressbar" aria-valuenow={pct} aria-valuemin={0}
+    <div className="h-3 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800" role="progressbar" aria-label={label} aria-valuenow={pct} aria-valuetext={`${pct}%`} aria-valuemin={0}
       aria-valuemax={100}>
       <div className={classNames('h-full rounded-full transition-all duration-500', color, striped && 'animate-pulse')}
         style={{ width: `${pct}%` }} />

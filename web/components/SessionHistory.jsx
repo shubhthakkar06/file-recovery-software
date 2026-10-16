@@ -89,7 +89,7 @@ export default function SessionHistory() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">History &amp; reports</h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white md:text-4xl">History &amp; reports</h1>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Every scan is stored with its results, so you can come back later and restore more files.</p>
         </div>
         <div className="flex gap-2">
@@ -141,10 +141,10 @@ export default function SessionHistory() {
         {data && data.items.length > 0 && (
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
-              <thead className="bg-slate-50 dark:bg-slate-900/90 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
+              <thead className="bg-slate-50 dark:bg-slate-900/90 text-center text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-800">
                 <tr>
-                  <th className="px-4 py-2.5">Session</th><th className="px-3 py-2.5">Status</th><th className="px-3 py-2.5">Files</th>
-                  <th className="px-3 py-2.5">High / Med / Low</th><th className="px-3 py-2.5">Started</th><th className="px-3 py-2.5" />
+                  <th scope="col" className="px-4 py-2.5 text-left">Session</th><th scope="col" className="px-3 py-2.5">Status</th><th scope="col" className="px-3 py-2.5 text-right">Files</th>
+                  <th scope="col" className="px-3 py-2.5">High / Med / Low</th><th scope="col" className="px-3 py-2.5">Started</th><th scope="col" className="px-3 py-2.5"><span className="sr-only">Actions</span></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
