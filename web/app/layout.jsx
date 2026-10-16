@@ -3,6 +3,7 @@ import { AuthProvider } from '@/components/AuthProvider';
 import ProjectCreditHeader from '@/components/ProjectCreditHeader';
 import NavBar from '@/components/NavBar';
 import { AgentBanner, ApiModeBoundary } from '@/components/AgentStatus';
+import SiteFooter from '@/components/SiteFooter';
 
 export const metadata = {
   title: 'HDD File Recovery Suite',
@@ -30,18 +31,12 @@ export default function RootLayout({ children }) {
       </head>
       <body className="min-h-screen bg-slate-100 text-slate-800 antialiased transition-colors duration-200 dark:bg-[#080d1a] dark:text-slate-100">
         <AuthProvider>
+          <a href="#main-content" className="sr-only fixed left-4 top-4 z-[60] rounded-lg bg-white px-4 py-3 font-semibold text-brand-900 shadow focus:not-sr-only focus:outline-none focus:ring-2 focus:ring-brand-600">Skip to main content</a>
           <ProjectCreditHeader />
           <NavBar />
           <AgentBanner />
-          <main className="mx-auto max-w-7xl px-4 py-6"><ApiModeBoundary>{children}</ApiModeBoundary></main>
-          <footer className="mx-auto max-w-7xl px-4 pb-12 pt-6 text-center text-xs text-slate-500 border-t border-slate-200/80 dark:border-slate-800/80 mt-12 space-y-2">
-            <div className="text-slate-500 dark:text-slate-400">
-              © 2026 HDD File Recovery Suite. All rights reserved.
-            </div>
-            <p className="text-slate-500 dark:text-slate-400 max-w-2xl mx-auto pt-1 leading-relaxed">
-              Read-only recovery: source drives are opened with GENERIC_READ and recovered files are never written back to them.
-            </p>
-          </footer>
+          <main id="main-content" tabIndex={-1} className="mx-auto max-w-7xl px-4 py-6"><ApiModeBoundary>{children}</ApiModeBoundary></main>
+          <SiteFooter />
         </AuthProvider>
       </body>
     </html>
